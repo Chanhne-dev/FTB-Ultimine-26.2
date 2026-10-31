@@ -1,27 +1,25 @@
 package dev.ftb.mods.ftbultimine.client;
 
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.shaders.UniformType;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.BindGroupLayouts;
 
 public class UltimineRenderPipelines {
-    // Note: all snippets are currently private in RenderPipelines, so copying them here for now at least
-    // GLOBAL_SNIPPET, MATRICES_PROJECTION_SNIPPET, MATRICES_FOG_SNIPPET
     public static final RenderPipeline LINES_NO_DEPTH_TRANSLUCENT = RenderPipeline.builder()
             .withLocation("pipeline/lines_translucent")
             .withVertexShader("core/rendertype_lines")
             .withFragmentShader("core/rendertype_lines")
-            .withUniform("Globals", UniformType.UNIFORM_BUFFER)
-            .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
-            .withUniform("Projection", UniformType.UNIFORM_BUFFER)
-            .withUniform("Fog", UniformType.UNIFORM_BUFFER)
+            .withBindGroupLayout(BindGroupLayouts.GLOBALS)
+            .withBindGroupLayout(BindGroupLayouts.MATRICES_PROJECTION)
+            .withBindGroupLayout(BindGroupLayouts.FOG)
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
-            .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH, VertexFormat.Mode.LINES)
+            .withVertexBinding(0, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH)
+            .withPrimitiveTopology(PrimitiveTopology.LINES)
             .withDepthStencilState(new DepthStencilState(CompareOp.ALWAYS_PASS, false))
             .withCull(false)
             .build();

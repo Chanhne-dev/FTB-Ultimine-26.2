@@ -3,8 +3,6 @@ plugins {
 }
 
 loom {
-//	accessWidenerPath = project(":common").file("src/main/resources/${project.mod_id}.accesswidener")
-
 	mixin {
 		useLegacyMixinAp = false
 	}
@@ -15,6 +13,7 @@ dependencies {
 
 	compileOnly "net.fabricmc:sponge-mixin:0.17.0+mixin.0.8.7"
 	compileOnly "io.github.llamalad7:mixinextras-fabric:0.5.0"
+	compileOnly "net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}"
 
 	compileOnly "dev.ftb.mods:ftb-library:${rootProject.ftb_library_version}"
 	compileOnly "dev.ftb.mods:ftb-ranks:${rootProject.ftb_ranks_version}"

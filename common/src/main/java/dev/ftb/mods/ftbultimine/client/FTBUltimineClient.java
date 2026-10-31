@@ -1,6 +1,7 @@
 package dev.ftb.mods.ftbultimine.client;
 
 import com.google.common.collect.ImmutableList;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext; // Thêm import
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -109,48 +110,48 @@ public class FTBUltimineClient {
 		return actualBlocks == 0 || shapeBlocks.isEmpty() ? null : shapeBlocks;
 	}
 
-	public void renderInGame(PoseStack stack) {
+	public void renderInGame(LevelRenderContext ctx) { // Thay đổi tham số
 		if (!ultimineKeyPressed || cachedPos == null || cachedEdges == null || cachedEdges.isEmpty() || !canUltimine) {
 			return;
 		}
 
-		Minecraft mc = Minecraft.getInstance();
-		Camera camera = mc.getEntityRenderDispatcher().camera;
-		if (camera == null) {
-			return;
-		}
-		Vec3 cameraPos = camera.position();
+		// Lấy thông tin camera và pose từ context
+		Vec3 cameraPos = ctx.levelState().cameraRenderState.pos;
+		PoseStack stack = ctx.poseStack();
 
 		stack.pushPose();
 		stack.translate(cachedPos.getX() - cameraPos.x, cachedPos.getY() - cameraPos.y, cachedPos.getZ() - cameraPos.z);
-		Matrix4f matrix = stack.last().pose();
 
-		// solid lines on outer edges of blocks
-		VertexConsumer buffer = mc.renderBuffers().bufferSource().getBuffer(RenderTypes.LINES);
-		for (CachedEdge edge : cachedEdges) {
-			buffer.addVertex(matrix, edge.x1(), edge.y1(), edge.z1())
-					.setColor(255, 255, 255, 255)
-					.setNormal(edge.xn(), edge.yn(), edge.zn())
-					.setLineWidth(2f);
-			buffer.addVertex(matrix, edge.x2(), edge.y2(), edge.z2())
-					.setColor(255, 255, 255, 255)
-					.setNormal(edge.xn(), edge.yn(), edge.zn())
-					.setLineWidth(2f);
-		}
+		// 1. Gửi các đường nét đặc (solid lines)
+		ctx.submitNodeCollector().submitCustomGeometry(stack, RenderTypes.lines(), (pose, buffer) -> {
+			Matrix4f matrix = pose.pose(); // Lấy matrix từ PoseStack.Pose bên trong callback
+			for (CachedEdge edge : cachedEdges) {
+				buffer.addVertex(matrix, edge.x1(), edge.y1(), edge.z1())
+						.setColor(255, 255, 255, 255)
+						.setNormal(edge.xn(), edge.yn(), edge.zn())
+						.setLineWidth(2f);
+				buffer.addVertex(matrix, edge.x2(), edge.y2(), edge.z2())
+						.setColor(255, 255, 255, 255)
+						.setNormal(edge.xn(), edge.yn(), edge.zn())
+						.setLineWidth(2f);
+			}
+		});
 
-		// translucent lines on hidden edges of blocks
-		VertexConsumer buffer2 = mc.renderBuffers().bufferSource().getBuffer(UltimineRenderTypes.LINES_NO_DEPTH_TRANSLUCENT);
+		// 2. Gửi các đường nét mờ (translucent lines)
 		int alpha = FTBUltimineClientConfig.PREVIEW_LINE_ALPHA.get();
-		for (CachedEdge edge : cachedEdges) {
-			buffer2.addVertex(matrix, edge.x1(), edge.y1(), edge.z1())
-					.setColor(255, 255, 255, alpha)
-					.setNormal(edge.xn(), edge.yn(), edge.zn())
-					.setLineWidth(1f);
-			buffer2.addVertex(matrix, edge.x2(), edge.y2(), edge.z2())
-					.setColor(255, 255, 255, alpha)
-					.setNormal(edge.xn(), edge.yn(), edge.zn())
-					.setLineWidth(1f);
-		}
+		ctx.submitNodeCollector().submitCustomGeometry(stack, UltimineRenderTypes.LINES_NO_DEPTH_TRANSLUCENT, (pose, buffer) -> {
+			Matrix4f matrix = pose.pose();
+			for (CachedEdge edge : cachedEdges) {
+				buffer.addVertex(matrix, edge.x1(), edge.y1(), edge.z1())
+						.setColor(255, 255, 255, alpha)
+						.setNormal(edge.xn(), edge.yn(), edge.zn())
+						.setLineWidth(1f);
+				buffer.addVertex(matrix, edge.x2(), edge.y2(), edge.z2())
+						.setColor(255, 255, 255, alpha)
+						.setNormal(edge.xn(), edge.yn(), edge.zn())
+						.setLineWidth(1f);
+			}
+		});
 
 		stack.popPose();
 	}
